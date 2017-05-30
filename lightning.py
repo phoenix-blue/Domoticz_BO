@@ -19,7 +19,7 @@
 import math
 import requests
 import json
-import time
+import os
 from datetime import datetime
 
 # Domoticz server settings
@@ -27,8 +27,8 @@ server = "http://localhost"
 port = 8080
 deviceIdx = "1"
 
-#Location to import the lightning info
-jsonUrl = "http://www.onweerdetectie.com/domoticz_bo.json" 
+# Location to import the lightning info
+jsonUrl = "http://www.onweerdetectie.com/domoticz_bo.json"
 
 # GPS location and distance to calculate
 latHome = xx.xxxxxx
@@ -46,7 +46,7 @@ try:
 except:
     pass
 
-	
+
 # Location distance calculation
 
 def distance(lat1, lng1, lat2, lng2):
@@ -64,33 +64,33 @@ def distance(lat1, lng1, lat2, lng2):
     return radius * ang
 
 last = 0
-while True:
-    z = requests.get(jsonUrl)
-    data = json.loads(z.content)
-    value = 0
-    ignored = 0
-    for pos in data:
-        time_, lat, lng = pos
-        distanceBetween = distance(latHome, lngHome, lat, lng)
-        if (distanceBetween <= distanceRange):
-            if (time_ > last):
-                value += 1
-            else:
-                ignored += 1
+if os.path.exists("/tmp/last_lightning.txt"):
+    f = open("/tmp/last_lightning.txt")
+    last = int(f.read())
+    f.close()
 
-    last = time_
+z = requests.get(jsonUrl)
+data = json.loads(z.content)
+value = 0
+ignored = 0
+for pos in data:
+    time_, lat, lng = pos
+    distanceBetween = distance(latHome, lngHome, lat, lng)
+    if (distanceBetween <= distanceRange):
+        if (time_ > last):
+            value += 1
+        else:
+            ignored += 1
 
-# terminal print
-    print ("Found %d matches -- %s" %
-           (value, datetime.strftime(datetime.now(), "%c")))
-    print ("%d old matches were ignored -- %s" %
-           (ignored, datetime.strftime(datetime.now(), "%c")))
-		   
-# Send info to domoticz
-		   requests.get(
-        "%s:%d/json.htm?type=command&param=udevice&idx=%s&svalue=%d" %
-        (server, port, deviceIdx, value))
+f = open("/tmp/last_lightning.txt", "w")
+f.write(str(time_))
+f.close()
 
-		# time.sleep(120) # When use script in loop use this part.
-    quit(5) # when use script one's a time use this part.
-	
+print ("Found %d matches -- %s" %
+       (value, datetime.strftime(datetime.now(), "%c")))
+print ("%d old matches were ignored -- %s" %
+       (ignored, datetime.strftime(datetime.now(), "%c")))
+
+requests.get(
+    "%s:%d/json.htm?type=command&param=udevice&idx=%s&svalue=%d" %
+    (server, port, deviceIdx, value))
