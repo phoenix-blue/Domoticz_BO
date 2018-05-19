@@ -28,7 +28,7 @@ port = 8080
 deviceIdx = "1"
 
 # Location to import the lightning info
-jsonUrl = "http://www.onweeractueel.nl/domoticz_bo.json"
+jsonUrl = "https://www.onweeractueel.nl/domoticz_bo.json"
 
 # GPS location and distance to calculate
 latHome = xx.xxxxxx
